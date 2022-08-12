@@ -1,3 +1,4 @@
+import { EventEmitter } from '@baileyherbert/events';
 import { URLSearchParams } from 'url';
 import { AccountCollection } from '../collections/AccountCollection';
 import { AssetsCollection } from '../collections/AssetsCollection';
@@ -27,7 +28,7 @@ import { OmahaCollection } from './OmahaCollection';
 import { OmahaOptions } from './OmahaOptions';
 import { OmahaRealtimeClient } from './OmahaRealtimeClient';
 
-export class Omaha {
+export class Omaha extends EventEmitter<OmahaEvents> {
 
 	/**
 	 * The root URL of the target omaha installation without any trailing slashes.
@@ -49,6 +50,21 @@ export class Omaha {
 	 * The mock response for testing.
 	 */
 	private _mockResponse?: any;
+
+	/**
+	 * A boolean indicating whether to reattempt failed requests.
+	 */
+	private _reattemptFailed = true;
+
+	/**
+	 * The number of attempts to perform for failed requests.
+	 */
+	private _reattemptFailedCount = 5;
+
+	/**
+	 * The number of milliseconds to wait between reattempts.
+	 */
+	private _reattemptFailedDelay = 2000;
 
 	/**
 	 * The realtime websocket client for this instance.
@@ -74,15 +90,19 @@ export class Omaha {
 	 */
 	public constructor(options: OmahaOptionsWithUrl);
 	public constructor(urlOrOptions: string | OmahaOptionsWithUrl, extraOptions?: OmahaOptions) {
+		super(false);
+
 		this.ws = new OmahaRealtimeClient(this);
 
 		if (typeof urlOrOptions === 'string') {
 			this._url = this._validateRootUrl(urlOrOptions);
 			this._token = extraOptions?.token;
+			this._validateOptions(extraOptions);
 		}
 		else {
 			this._url = this._validateRootUrl(urlOrOptions.url);
 			this._token = urlOrOptions.token;
+			this._validateOptions(urlOrOptions);
 		}
 	}
 
@@ -179,7 +199,7 @@ export class Omaha {
 			}
 		}
 
-		return this._fetch<T>('GET', path);
+		return this._fetchWithRetries<T>('GET', path);
 	}
 
 	/**
@@ -189,7 +209,7 @@ export class Omaha {
 	 * @returns
 	 */
 	public async post<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetch<T>('POST', path, body);
+		return this._fetchWithRetries<T>('POST', path, body);
 	}
 
 	/**
@@ -199,7 +219,7 @@ export class Omaha {
 	 * @returns
 	 */
 	public async put<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetch<T>('PUT', path, body);
+		return this._fetchWithRetries<T>('PUT', path, body);
 	}
 
 	/**
@@ -209,7 +229,7 @@ export class Omaha {
 	 * @returns
 	 */
 	public async patch<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetch<T>('PATCH', path, body);
+		return this._fetchWithRetries<T>('PATCH', path, body);
 	}
 
 	/**
@@ -219,7 +239,49 @@ export class Omaha {
 	 * @returns
 	 */
 	public async delete<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetch<T>('DELETE', path, body);
+		return this._fetchWithRetries<T>('DELETE', path, body);
+	}
+
+	/**
+	 * Forwards parameters to `this._fetch()` but catches client-side errors and reattempts the requests according to
+	 * the client configuration.
+	 * @param method
+	 * @param path
+	 * @param body
+	 * @param attempt
+	 * @returns
+	 */
+	private async _fetchWithRetries<T>(method: string, path: string, body?: PostOptions, attempt = 0): Promise<T> {
+		try {
+			const response = await this._fetch<T>(method, path, body);
+
+			if (attempt > 0) {
+				this.emit('client_recovered', attempt - 1);
+			}
+
+			return response;
+		}
+		catch (error) {
+			if (error instanceof HttpError) {
+				this.emit('error', error);
+				this.emit('server_error', error);
+				throw error;
+			}
+			else if (error instanceof Error) {
+				this.emit('error', error);
+				this.emit('client_error', error, attempt, this._reattemptFailed ? this._reattemptFailedCount : undefined);
+
+				if (this._reattemptFailed && (this._reattemptFailedCount === 0 || attempt < this._reattemptFailedCount)) {
+					await new Promise(resolve => setTimeout(resolve, this._reattemptFailedDelay));
+					return this._fetchWithRetries(method, path, body, attempt + 1);
+				}
+
+				throw error;
+			}
+			else {
+				throw new Error(`Caught non-error of type ${typeof error} within fetch - this should never happen!`);
+			}
+		}
 	}
 
 	/**
@@ -227,10 +289,9 @@ export class Omaha {
 	 * @param method
 	 * @param path
 	 * @param body
-	 * @param headers
 	 * @returns
 	 */
-	private async _fetch<T>(method: string, path: string, body?: PostOptions, headers?: Record<string, any>): Promise<T> {
+	private async _fetch<T>(method: string, path: string, body?: PostOptions): Promise<T> {
 		if (typeof this._mockResponse !== 'undefined') {
 			const mock = this._mockResponse;
 			this._mockResponse = undefined;
@@ -245,8 +306,7 @@ export class Omaha {
 		const requestHeaders: Record<string, string> = {
 			'User-Agent': 'Omaha Client (https://npmjs.com/@omaha/client)',
 			'Accept': 'application/json',
-			'Content-Type': 'application/json',
-			...headers
+			'Content-Type': 'application/json'
 		};
 
 		if (body instanceof FormData) {
@@ -332,6 +392,24 @@ export class Omaha {
 	private _validateRootUrl(input: string) {
 		const url = new URL(input);
 		return url.href.replace(/\/+$/, '');
+	}
+
+	/**
+	 * Validates and applies the constructor options.
+	 * @param options
+	 */
+	private _validateOptions(options: OmahaOptions = {}) {
+		if (typeof options.reattemptFailed === 'boolean') {
+			this._reattemptFailed = options.reattemptFailed;
+		}
+
+		if (typeof options.reattemptFailedCount === 'number') {
+			this._reattemptFailedCount = options.reattemptFailedCount;
+		}
+
+		if (typeof options.reattemptFailedDelay === 'number') {
+			this._reattemptFailedDelay = options.reattemptFailedDelay;
+		}
 	}
 
 	/**
@@ -465,3 +543,35 @@ export interface OmahaOptionsWithUrl extends OmahaOptions {
 type CollectionConstructor<T extends OmahaCollection> = new (client: Omaha) => T;
 
 export type PostOptions = Record<string, any> | FormData;
+
+type OmahaEvents = {
+
+	/**
+	 * Emitted when a request fails for any reason.
+	 */
+	error: [error: Error];
+
+	/**
+	 * Emitted when the server returns an error code.
+	 */
+	server_error: [error: HttpError];
+
+	/**
+	 * Emitted when a client-side error occurs.
+	 * @param error
+	 *   The error that was thrown.
+	 * @param attempt
+	 *   The current attempt number (starts at 0).
+	 * @param maxAttempts
+	 *   The maximum number of attempts configured on the client. This will be `undefined` when reattempts are disabled,
+	 *   or `0` when there is no configured limit.
+	 */
+	client_error: [error: Error, attempt: number, maxAttempts?: number];
+
+	/**
+	 * Emitted when the client recovers from an error.
+	 * @param attempts The total number of reattempts it took to recover.
+	 */
+	client_recovered: [attempts: number];
+
+}
