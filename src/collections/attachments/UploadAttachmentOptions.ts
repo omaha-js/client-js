@@ -53,9 +53,9 @@ export interface UploadAttachmentBufferOptions extends BaseAttachmentOptions {
 	 * - Pass a `string` with the path of the file on the disk.
 	 * - Pass a `Blob` to stream the file from its source.
 	 * - Pass a `Readable` to stream the file from its source.
-	 * - Pass a `Buffer` or `ArrayBuffer` to send the file from memory.
+	 * - Pass a `Buffer` to send the file from memory.
 	 */
-	content: Buffer | Blob | ArrayBuffer | Readable;
+	content: Buffer | Blob | Readable;
 
 	/**
 	 * The original name of the file. This is optional when `content` is set to a string file path.

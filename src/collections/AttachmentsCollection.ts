@@ -104,13 +104,12 @@ export class AttachmentsCollection extends OmahaCollection {
 	}
 
 	/**
-	 * Returns true if the given value is one of `ArrayBuffer`, `Buffer`, or `Blob`.
+	 * Returns true if the given value is one of `Buffer`, or `Blob`.
 	 *
 	 * @param value
 	 * @returns
 	 */
 	private isDirectSource(value: any) {
-		if (typeof ArrayBuffer === 'function' && value instanceof ArrayBuffer) return true;
 		if (typeof Buffer === 'function' && value instanceof Buffer) return true;
 		if (typeof Blob === 'function' && value instanceof Blob) return true;
 
