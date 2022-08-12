@@ -37,9 +37,8 @@ export class Omaha {
 
 	/**
 	 * The bearer token to use for authentication (or undefined if working in public mode).
-	 * @internal
 	 */
-	public _token?: string;
+	private _token?: string;
 
 	/**
 	 * A map of collection instances keyed by their constructors.
@@ -428,13 +427,27 @@ export class Omaha {
 	}
 
 	/**
-	 * Sets the token on the client.
+	 * Updates the token on the client.
 	 * @param token
-	 * @internal
 	 */
-	public _setToken(token?: string) {
+	public setToken(token?: string) {
+		if (typeof token === 'string') {
+			token = token.trim();
+
+			if (token.length === 0) {
+				token = undefined;
+			}
+		}
+
 		this._token = token;
 		this.ws._handleTokenUpdate();
+	}
+
+	/**
+	 * Returns the current token.
+	 */
+	public getToken() {
+		return this._token;
 	}
 
 }

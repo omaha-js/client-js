@@ -36,12 +36,12 @@ export class OmahaRealtimeClient extends EventEmitter<RealtimeEvents> {
 	}
 
 	private _startSocket() {
-		if (!this.socketActive && this.client._token) {
+		if (!this.socketActive && this.client.getToken()) {
 			this.socketActive = true;
 			this.socket = io(this.client._url + '/events', {
 				extraHeaders: {
 					'User-Agent': 'Omaha Client (https://npmjs.com/@omaha/client)',
-					'Authorization': 'Bearer ' + this.client._token
+					'Authorization': 'Bearer ' + this.client.getToken()
 				}
 			});
 
@@ -75,7 +75,7 @@ export class OmahaRealtimeClient extends EventEmitter<RealtimeEvents> {
 	 */
 	public _handleTokenUpdate() {
 		if (this.clientActive) {
-			if (this.client._token) {
+			if (this.client.getToken()) {
 				this._startSocket();
 			}
 			else {

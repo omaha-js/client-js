@@ -15,7 +15,7 @@ export class AuthCollection extends OmahaCollection {
 	 */
 	public async login(options: LoginRequest) {
 		const response = await this.client.post<LoginResponse>('/v1/auth/login', options);
-		this.client._setToken(response.token);
+		this.client.setToken(response.token);
 		return response;
 	}
 
@@ -26,7 +26,7 @@ export class AuthCollection extends OmahaCollection {
 	 */
 	public async register(options: RegisterRequest) {
 		const response = await this.client.post<RegisterResponse>('/v1/auth/register', options);
-		this.client._setToken(response.token);
+		this.client.setToken(response.token);
 		return response;
 	}
 
@@ -51,7 +51,7 @@ export class AuthCollection extends OmahaCollection {
 	 * Logs out (removes the token).
 	 */
 	public async logout() {
-		this.client._setToken(undefined);
+		this.client.setToken(undefined);
 	}
 
 }
