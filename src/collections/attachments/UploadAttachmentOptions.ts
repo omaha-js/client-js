@@ -1,42 +1,65 @@
-export type UploadAttachmentOptions = (
-	UploadAttachmentFileOptions |
-	UploadAttachmentBufferOptions
-);
+import { Readable } from 'stream';
 
-export interface UploadAttachmentFileOptions {
+export type UploadAttachmentOptions = (UploadAttachmentFileOptions | UploadAttachmentBufferOptions);
 
-	/**
-	 * Uploads the attachment from a file path on the local disk.
-	 */
-	type: 'file';
+interface BaseAttachmentOptions {
 
 	/**
-	 * The name of the file that we're uploading. If not specified, it is inferred from the path.
+	 * Optional MD5 checksum of the file to verify integrity of the upload. It is recommended to provide this where
+	 * possible. This can be computed automatically when `content` is set to a string file path.
 	 */
-	name?: string;
+	hash_md5?: string;
 
 	/**
-	 * The path to the file for reading.
+	 * Optional SHA1 checksum of the file to verify integrity of the upload. It is recommended to provide this where
+	 * possible. This can be computed automatically when `content` is set to a string file path.
 	 */
-	path: string;
+	hash_sha1?: string;
+
+	/**
+	 * The total size of the file to verify integrity of the upload. It is recommended to provide this where possible.
+	 * This can be computed automatically when `content` is set to a string file path.
+	 */
+	size?: number;
 
 }
 
-export interface UploadAttachmentBufferOptions {
+export interface UploadAttachmentFileOptions extends BaseAttachmentOptions {
 
 	/**
-	 * Uploads the attachment using a buffer or blob.
+	 * The file content to upload. Available options:
+	 *
+	 * - Pass a `File` to upload from the browser.
+	 * - Pass a `string` with the path of the file on the disk.
+	 * - Pass a `Blob` to stream the file from its source.
+	 * - Pass a `Readable` to stream the file from its source.
+	 * - Pass a `Buffer` or `ArrayBuffer` to send the file from memory.
 	 */
-	type: 'buffer';
+	content: File | string;
 
 	/**
-	 * The name of the file that we're uploading.
+	 * The original name of the file. This is optional when `content` is set to a string file path.
+	 */
+	name?: string;
+
+}
+
+export interface UploadAttachmentBufferOptions extends BaseAttachmentOptions {
+
+	/**
+	 * The file content to upload. Available options:
+	 *
+	 * - Pass a `File` to upload from the browser.
+	 * - Pass a `string` with the path of the file on the disk.
+	 * - Pass a `Blob` to stream the file from its source.
+	 * - Pass a `Readable` to stream the file from its source.
+	 * - Pass a `Buffer` or `ArrayBuffer` to send the file from memory.
+	 */
+	content: Buffer | Blob | ArrayBuffer | Readable;
+
+	/**
+	 * The original name of the file. This is optional when `content` is set to a string file path.
 	 */
 	name: string;
-
-	/**
-	 * The contents of the file as a buffer.
-	 */
-	buffer: Buffer | Blob | ArrayBuffer;
 
 }
