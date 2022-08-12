@@ -322,10 +322,13 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 		}
 
 		const requestHeaders: Record<string, string> = {
-			'User-Agent': 'Omaha Client (https://npmjs.com/@omaha/client)',
 			'Accept': 'application/json',
 			'Content-Type': 'application/json'
 		};
+
+		if (typeof window === 'undefined') {
+			requestHeaders['User-Agent'] = 'Omaha Client (https://npmjs.com/@omaha/client)';
+		}
 
 		if (body instanceof FormData) {
 			delete requestHeaders['Content-Type'];
