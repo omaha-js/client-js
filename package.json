@@ -44,5 +44,9 @@
 				"tsconfig": "tests/tsconfig.json"
 			}
 		}
+	},
+	"dependencies": {
+		"@baileyherbert/events": "^1.0.1",
+		"socket.io-client": "^4.5.1"
 	}
 }

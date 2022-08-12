@@ -25,11 +25,12 @@ import { TooManyRequestsError } from './exceptions/TooManyRequestsError';
 import { UnauthorizedError } from './exceptions/UnauthorizedError';
 import { OmahaCollection } from './OmahaCollection';
 import { OmahaOptions } from './OmahaOptions';
+import { OmahaRealtimeClient } from './OmahaRealtimeClient';
 
 export class Omaha {
 
 	/**
-	 * The root URL of the target omaha installation.
+	 * The root URL of the target omaha installation without any trailing slashes.
 	 * @internal
 	 */
 	public readonly _url: string;
@@ -51,6 +52,11 @@ export class Omaha {
 	private _mockResponse?: any;
 
 	/**
+	 * The realtime websocket client for this instance.
+	 */
+	public readonly ws: OmahaRealtimeClient;
+
+	/**
 	 * Constructs a new instance of the omaha client for the target installation.
 	 * @param url The root URL of the target omaha installation.
 	 */
@@ -69,6 +75,8 @@ export class Omaha {
 	 */
 	public constructor(options: OmahaOptionsWithUrl);
 	public constructor(urlOrOptions: string | OmahaOptionsWithUrl, extraOptions?: OmahaOptions) {
+		this.ws = new OmahaRealtimeClient(this);
+
 		if (typeof urlOrOptions === 'string') {
 			this._url = this._validateRootUrl(urlOrOptions);
 			this._token = extraOptions?.token;
@@ -417,6 +425,16 @@ export class Omaha {
 		}
 
 		return response;
+	}
+
+	/**
+	 * Sets the token on the client.
+	 * @param token
+	 * @internal
+	 */
+	public _setToken(token?: string) {
+		this._token = token;
+		this.ws._handleTokenUpdate();
 	}
 
 }
