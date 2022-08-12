@@ -87,11 +87,15 @@ export class AttachmentsCollection extends OmahaCollection {
 				options.name ?? path.basename(options.content)
 			);
 		}
+		else if (typeof File === 'function' && options.content instanceof File) {
+			if (typeof options.size === 'undefined') {
+				form.append('file_size', options.content.size);
+			}
+
+			form.append('file', options.content, options.content.name);
+		}
 		else if (this.isDirectSource(options.content)) {
 			form.append('file', options.content, options.name);
-		}
-		else if (typeof File === 'function' && options.content instanceof File) {
-			form.append('file', options.content, options.content.name);
 		}
 		else if (this.isStreamSource(options.content)) {
 			form.append('file', options.content, options.name);
