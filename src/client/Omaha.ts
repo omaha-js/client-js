@@ -10,6 +10,7 @@ import { InvitesCollection } from '../collections/InvitesCollection';
 import { ReleasesCollection } from '../collections/ReleasesCollection';
 import { RepositoryCollection } from '../collections/RepositoryCollection';
 import { TagsCollection } from '../collections/TagsCollection';
+import { AbortError } from './exceptions/AbortError';
 import { BadGatewayError } from './exceptions/BadGatewayError';
 import { BadRequestError } from './exceptions/BadRequestError';
 import { ForbiddenError } from './exceptions/ForbiddenError';
@@ -67,6 +68,16 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	private _reattemptFailedDelay = 2000;
 
 	/**
+	 * The parent instance (for clones).
+	 */
+	private _parent?: Omaha;
+
+	/**
+	 * The abort controller for this instance.
+	 */
+	private _controller: AbortController;
+
+	/**
 	 * The realtime websocket client for this instance.
 	 */
 	public readonly ws: OmahaRealtimeClient;
@@ -93,6 +104,7 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 		super(false);
 
 		this.ws = new OmahaRealtimeClient(this);
+		this._controller = new AbortController();
 
 		if (typeof urlOrOptions === 'string') {
 			this._url = this._validateRootUrl(urlOrOptions);
@@ -268,6 +280,10 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 				throw error;
 			}
 			else if (error instanceof Error) {
+				if (error.name === 'AbortError') {
+					throw new AbortError('The operation was aborted.');
+				}
+
 				this.emit('error', error);
 				this.emit('client_error', error, attempt, this._reattemptFailed ? this._reattemptFailedCount : undefined);
 
@@ -277,6 +293,13 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 				}
 
 				throw error;
+			}
+			else if (error instanceof DOMException) {
+				if (error.name === 'AbortError') {
+					throw new AbortError('The operation was aborted.');
+				}
+
+				throw new Error(`Unexpected DOMException (please report this): ` + error.stack);
 			}
 			else {
 				throw new Error(`Caught non-error of type ${typeof error} within fetch - this should never happen!`);
@@ -313,15 +336,16 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 			delete requestHeaders['Content-Type'];
 		}
 
-		if (typeof this._token === 'string') {
-			requestHeaders['Authorization'] = 'Bearer ' + this._token;
+		if (typeof this.getToken() === 'string') {
+			requestHeaders['Authorization'] = 'Bearer ' + this.getToken();
 		}
 
 		const response = await fetch(this._url + '/' + path.replace(/^\/+/, ''), {
 			method,
 			headers: requestHeaders,
 			// @ts-ignore
-			body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined
+			body: body ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
+			signal: this._controller.signal
 		});
 
 		// Throw for erroneous responses
@@ -508,7 +532,11 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 * Updates the token on the client.
 	 * @param token
 	 */
-	public setToken(token?: string) {
+	public setToken(token?: string): void {
+		if (this._parent) {
+			return this._parent.setToken(token);
+		}
+
 		if (typeof token === 'string') {
 			token = token.trim();
 
@@ -524,8 +552,37 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	/**
 	 * Returns the current token.
 	 */
-	public getToken() {
+	public getToken(): string | undefined {
+		if (this._parent) {
+			return this._parent.getToken();
+		}
+
 		return this._token;
+	}
+
+	/**
+	 * Creates a clone of this client instance that uses the same token. This is most useful for aborting a subset of
+	 * requests without affecting others.
+	 */
+	public derive() {
+		const client = new Omaha({
+			url: this._url,
+			token: this._token,
+			reattemptFailed: this._reattemptFailed,
+			reattemptFailedCount: this._reattemptFailedCount,
+			reattemptFailedDelay: this._reattemptFailedDelay
+		});
+
+		client._parent = this;
+		return client;
+	}
+
+	/**
+	 * Aborts all active requests on the client.
+	 */
+	public abort() {
+		this._controller.abort();
+		this._controller = new AbortController();
 	}
 
 }
