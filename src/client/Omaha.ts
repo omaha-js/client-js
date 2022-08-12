@@ -28,6 +28,8 @@ import { UnauthorizedError } from './exceptions/UnauthorizedError';
 import { OmahaCollection } from './OmahaCollection';
 import { OmahaOptions } from './OmahaOptions';
 import { OmahaRealtimeClient } from './OmahaRealtimeClient';
+import { DOMException, fetch } from './util/fetch';
+import FormData from 'form-data';
 
 export class Omaha extends EventEmitter<OmahaEvents> {
 
@@ -279,7 +281,7 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 				this.emit('server_error', error);
 				throw error;
 			}
-			else if (error instanceof Error) {
+			else if (error instanceof Error || (DOMException && error instanceof DOMException)) {
 				if (error.name === 'AbortError') {
 					throw new AbortError('The operation was aborted.');
 				}
@@ -293,13 +295,6 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 				}
 
 				throw error;
-			}
-			else if (error instanceof DOMException) {
-				if (error.name === 'AbortError') {
-					throw new AbortError('The operation was aborted.');
-				}
-
-				throw new Error(`Unexpected DOMException (please report this): ` + error.stack);
 			}
 			else {
 				throw new Error(`Caught non-error of type ${typeof error} within fetch - this should never happen!`);
