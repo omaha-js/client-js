@@ -8,7 +8,6 @@ export * from './client/OmahaRealtimeClient';
 export * from './types/scopes';
 
 export * from './entities/enum/CollaborationRole';
-export * from './entities/enum/ReleaseAttachmentStatus';
 export * from './entities/enum/ReleaseStatus';
 export * from './entities/enum/RepositoryAccessType';
 export * from './entities/enum/RepositoryVersionScheme';

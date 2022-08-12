@@ -1,4 +1,3 @@
-import { ReleaseAttachmentStatus } from './enum/ReleaseAttachmentStatus';
 import { Release } from './Release';
 
 export interface ReleaseAttachment {
@@ -6,7 +5,6 @@ export interface ReleaseAttachment {
 	file_name: string;
 	mime: string;
 	size: number;
-	status: ReleaseAttachmentStatus;
 	hash_sha1: string;
 	hash_md5: string;
 	download_count: number;
