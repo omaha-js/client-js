@@ -11,22 +11,32 @@ export class AuthCollection extends OmahaCollection {
 	/**
 	 * Logs into an account with a username and password.
 	 * @param options
+	 * @param login Automatically update the token on the client? (default = `true`)
 	 * @returns
 	 */
-	public async login(options: LoginRequest) {
+	public async login(options: LoginRequest, login = true) {
 		const response = await this.client.post<LoginResponse>('/v1/auth/login', options);
-		this.client.setToken(response.token);
+
+		if (login) {
+			this.client.setToken(response.token);
+		}
+
 		return response;
 	}
 
 	/**
 	 * Registers a new account with the given parameters.
 	 * @param options
+	 * @param login Automatically update the token on the client? (default = `true`)
 	 * @returns
 	 */
-	public async register(options: RegisterRequest) {
+	public async register(options: RegisterRequest, login = true) {
 		const response = await this.client.post<RegisterResponse>('/v1/auth/register', options);
-		this.client.setToken(response.token);
+
+		if (login) {
+			this.client.setToken(response.token);
+		}
+
 		return response;
 	}
 
