@@ -51,7 +51,7 @@ await client.auth.login({
 Easily get an array of releases that match your parameters.
 
 ```ts
-await client.releases.search('8d488eb3-70ae-4001-a058-1a6054151e13', {
+await client.releases.search('repo_id', {
     constraint: '^2.0.0'
 });
 ```
@@ -62,7 +62,7 @@ First, create a new draft release with the target version. If there's another dr
 as an update, so retrying any failed scripts will work.
 
 ```ts
-await client.releases.create({
+await client.releases.create('repo_id', {
     version: '2.0.1',
     description: 'Optional changelog goes here.',
     tags: ['latest']
@@ -73,16 +73,15 @@ Then upload attachments to the new release. The following example uploads an att
 the default asset for new repositories.
 
 ```ts
-await client.attachments.upload('8d488eb3-70ae-4001-a058-1a6054151e13', '2.0.1', 'main', {
-    type: 'file',
-    path: '/path/to/file.zip'
+await client.attachments.upload('repo_id', '2.0.1', 'main', {
+    content: '/path/to/file.zip'
 });
 ```
 
 Once all attachments have been uploaded, you can publish the release.
 
 ```ts
-await client.releases.publish('8d488eb3-70ae-4001-a058-1a6054151e13', '2.0.1');
+await client.releases.publish('repo_id', '2.0.1');
 ```
 
 ### realtime
@@ -133,16 +132,48 @@ lifetime.
 client.abort();
 ```
 
-You may wish to abort a certain subset of requests rather than all active requests, such as when working within
-front-end components. In this case, you should first derive the client and use that instance instead.
+### derived clients
+
+When working with front-end components, you may wish to create a clone of the client so as to split up any events and
+aborts. To do this, use the `derive()` method.
 
 ```ts
-const derived = client.derive();
-client.auth.login({ ... });
+const clone = client.derive();
 ```
 
-In this case, the abort will only affect requests originating from the derived client, although it inherits its options
-and token from the parent.
+The newly returned instance will have the same token and options as the parent client. If the token changes in the
+parent client, it will also change in the derived instance. However, all events and aborts are mutually exclusive.
+
+When you're done using the instance (such as when the front-end component is detached) simply invoke the `dispose()`
+method to abort all active requests and detach it from the parent instance for garbage collection.
+
+Here's an example from within a `svelte` component:
+
+```ts
+const clone = client.derive();
+const promise = clone.do.something();
+
+onDestroy(() => clone.dispose());
+```
+
+Remember that aborted requests will throw an `AbortError` so make sure this won't cause any problems.
+
+### events
+
+The client offers the following events that can be useful in some situations. Note that all events, except `token`,
+are local to the individual client (and do not propagate back to parent nor down to derived instances).
+
+```ts
+interface OmahaEvents {
+    error: [error: Error];
+	server_error: [error: HttpError];
+	client_error: [error: Error, attempt: number, maxAttempts?: number];
+	client_recovered: [attempts: number];
+	token: [token?: string];
+	loading_start: [];
+	loading_stop: [];
+}
+```
 
 ## license
 
