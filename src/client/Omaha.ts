@@ -289,6 +289,8 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 * @returns
 	 */
 	private async _fetchWithRetries<T>(method: string, path: string, body?: PostOptions, attempt = 0): Promise<T> {
+		const controller = this._controller;
+
 		try {
 			const response = await this._fetch<T>(method, path, body);
 
@@ -304,8 +306,8 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 				this.emit('server_error', error);
 				throw error;
 			}
-			else if (error instanceof Error || (DOMException && error instanceof DOMException)) {
-				if (error.name === 'AbortError') {
+			else if (error instanceof Error || (typeof DOMException !== 'undefined' && error instanceof DOMException)) {
+				if (controller !== this._controller || error.name === 'AbortError' || error.message.endsWith('The user aborted a request.')) {
 					throw new AbortError('The operation was aborted.');
 				}
 
