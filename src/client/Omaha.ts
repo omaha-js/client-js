@@ -69,6 +69,8 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 */
 	private _reattemptFailedDelay = 2000;
 
+	private _reattemptTasks = new Set<Reattempt>();
+
 	/**
 	 * The parent instance (for clones).
 	 */
@@ -290,7 +292,23 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 				this.emit('client_error', error, attempt, this._reattemptFailed ? this._reattemptFailedCount : undefined);
 
 				if (this._reattemptFailed && (this._reattemptFailedCount === 0 || attempt < this._reattemptFailedCount)) {
-					await new Promise(resolve => setTimeout(resolve, this._reattemptFailedDelay));
+					const o: any = {};
+
+					const resume = await new Promise<boolean>(resolve => {
+						o.timeout = setTimeout(() => resolve(true), this._reattemptFailedDelay);
+						o.cancel = () => resolve(false);
+
+						this._reattemptTasks.add(o);
+					});
+
+					this._reattemptTasks.delete(o);
+
+					if (!resume) {
+						throw new AbortError(
+							'The request was aborted while attempting to recover from an error:\n' + error.stack
+						);
+					}
+
 					return this._fetchWithRetries(method, path, body, attempt + 1);
 				}
 
@@ -584,6 +602,12 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	public abort() {
 		this._controller.abort();
 		this._controller = new AbortController();
+
+		// Cancel failed requests that are currently waiting for their next attempt
+		for (const task of this._reattemptTasks) {
+			task.cancel();
+		}
+	}
 	}
 
 }
@@ -638,4 +662,9 @@ type OmahaEvents = {
 	 */
 	token: [token?: string];
 
+}
+
+interface Reattempt {
+	timeout: NodeJS.Timeout;
+	cancel: () => void;
 }
