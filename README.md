@@ -166,12 +166,12 @@ are local to the individual client (and do not propagate back to parent nor down
 ```ts
 interface OmahaEvents {
     error: [error: Error];
-	server_error: [error: HttpError];
-	client_error: [error: Error, attempt: number, maxAttempts?: number];
-	client_recovered: [attempts: number];
-	token: [token?: string];
-	loading_start: [];
-	loading_stop: [];
+    server_error: [error: HttpError];
+    client_error: [error: Error, attempt: number, maxAttempts?: number];
+    client_recovered: [attempts: number];
+    token: [token?: string];
+    loading_start: [];
+    loading_stop: [];
 }
 ```
 
