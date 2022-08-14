@@ -543,8 +543,11 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 			}
 		}
 
-		this._token = token;
-		this.ws._handleTokenUpdate();
+		if (this._token !== token) {
+			this._token = token;
+			this.ws._handleTokenUpdate();
+			this.emit('token', token);
+		}
 	}
 
 	/**
@@ -628,5 +631,11 @@ type OmahaEvents = {
 	 * @param attempts The total number of reattempts it took to recover.
 	 */
 	client_recovered: [attempts: number];
+
+	/**
+	 * Emitted when the client's token changes.
+	 * @param token The new token (or undefined if signed out).
+	 */
+	token: [token?: string];
 
 }
