@@ -608,6 +608,17 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 			task.cancel();
 		}
 	}
+
+	/**
+	 * Cleans up the instance, removes all listeners, and aborts all active requests on the client.
+	 */
+	public dispose() {
+		this.abort();
+		this.removeAllListeners();
+		this._parent = undefined;
+		this._reattemptTasks.clear();
+		this._collections.clear();
+		this._token = undefined;
 	}
 
 }
