@@ -69,7 +69,15 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 */
 	private _reattemptFailedDelay = 2000;
 
+	/**
+	 * A set of objects that track reattempt timeouts and functions to cancel them.
+	 */
 	private _reattemptTasks = new Set<Reattempt>();
+
+	/**
+	 * The number of requests being worked on right now.
+	 */
+	private _workers = 0;
 
 	/**
 	 * The parent instance (for clones).
@@ -215,7 +223,7 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 			}
 		}
 
-		return this._fetchWithRetries<T>('GET', path);
+		return this._fetchWithTracking<T>('GET', path);
 	}
 
 	/**
@@ -225,7 +233,7 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 * @returns
 	 */
 	public async post<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetchWithRetries<T>('POST', path, body);
+		return this._fetchWithTracking<T>('POST', path, body);
 	}
 
 	/**
@@ -235,7 +243,7 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 * @returns
 	 */
 	public async put<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetchWithRetries<T>('PUT', path, body);
+		return this._fetchWithTracking<T>('PUT', path, body);
 	}
 
 	/**
@@ -245,7 +253,7 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 * @returns
 	 */
 	public async patch<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetchWithRetries<T>('PATCH', path, body);
+		return this._fetchWithTracking<T>('PATCH', path, body);
 	}
 
 	/**
@@ -255,7 +263,20 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 * @returns
 	 */
 	public async delete<T>(path: string, body?: PostOptions): Promise<T> {
-		return this._fetchWithRetries<T>('DELETE', path, body);
+		return this._fetchWithTracking<T>('DELETE', path, body);
+	}
+
+	/**
+	 * Forwards parameters to `this._fetchWithRetries()` but tracks the number of active workers and emits events
+	 * accordingly.
+	 * @param method
+	 * @param path
+	 * @param body
+	 * @returns
+	 */
+	private _fetchWithTracking<T>(method: string, path: string, body?: PostOptions): Promise<T> {
+		this._startWorking();
+		return this._fetchWithRetries<T>(method, path, body).finally(() => this._stopWorking());
 	}
 
 	/**
@@ -621,6 +642,31 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 		this._token = undefined;
 	}
 
+	/**
+	 * Records that a new request is being worked on. This might emit the `loading_start` event if it's the first
+	 * concurrent request.
+	 */
+	private _startWorking() {
+		if (this._workers++ === 0) {
+			this.emit('loading_start');
+		}
+	}
+
+	/**
+	 * Records that a request has completed or failed. This might emit the `loading_stop` event if it's the last
+	 * request remaining.
+	 */
+	private _stopWorking() {
+		if (--this._workers === 0) {
+			this.emit('loading_stop');
+		}
+
+		if (this._workers < 0) {
+			throw new Error('Active worker count fell below 0 - this should never happen!');
+		}
+	}
+
+
 }
 
 export interface OmahaOptionsWithUrl extends OmahaOptions {
@@ -672,6 +718,17 @@ type OmahaEvents = {
 	 * @param token The new token (or undefined if signed out).
 	 */
 	token: [token?: string];
+
+	/**
+	 * Emitted when the client starts working on one or more requests. It will not be emitted again until after the
+	 * `loading_stop` event is emitted.
+	 */
+	loading_start: [];
+
+	/**
+	 * Emitted when the client finishes all outstanding requests and has nothing left to do.
+	 */
+	loading_stop: [];
 
 }
 
