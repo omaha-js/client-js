@@ -1,3 +1,4 @@
+export * from './AbortError';
 export * from './HttpError';
 export * from './BadGatewayError';
 export * from './BadRequestError';
