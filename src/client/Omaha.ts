@@ -208,7 +208,10 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 */
 	public async get<T>(path: string, params?: any): Promise<T> {
 		if (typeof params === 'object') {
-			const search = new URLSearchParams();
+			const search = typeof window === 'object' && typeof window.URLSearchParams === 'function' ?
+				new window.URLSearchParams() :
+				new URLSearchParams();
+
 			const keys = Object.keys(params);
 
 			if (keys.length > 0) {
