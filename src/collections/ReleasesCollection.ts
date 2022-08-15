@@ -14,7 +14,7 @@ export class ReleasesCollection extends OmahaCollection {
 	 * @param repo The UUID of the repository.
 	 * @param options The search options.
 	 */
-	public async search(repo: string, options: ReleaseSearchRequest) {
+	public async search(repo: string, options: ReleaseSearchRequest = {}) {
 		return this.client.get<ReleaseSearchResponse>(
 			this.format('/v1/repositories/:repo/releases', { repo }),
 			options
