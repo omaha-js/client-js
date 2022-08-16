@@ -217,9 +217,14 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 			if (keys.length > 0) {
 				for (const key of keys) {
 					const value = params[key];
-					const transformed = Array.isArray(value) ? value.map(v => v.toString()).join(',') : value.toString();
 
-					search.append(key, transformed);
+					if (typeof value !== 'undefined') {
+						const transformed = Array.isArray(value) ?
+							value.map(v => v.toString()).join(',') :
+							value.toString();
+
+						search.append(key, transformed);
+					}
 				}
 
 				path += '?' + search.toString();
