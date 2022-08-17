@@ -1,11 +1,6 @@
 export interface UpdateAssetRequest {
 
 	/**
-	 * The new name of the asset.
-	 */
-	name?: string;
-
-	/**
 	 * The new description of the asset.
 	 */
 	description?: string;
