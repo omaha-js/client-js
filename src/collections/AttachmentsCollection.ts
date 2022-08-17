@@ -7,6 +7,7 @@ import FormData from 'form-data';
 import type Crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { DeleteObjectResponse } from './generic/DeleteObjectResponse';
 
 export class AttachmentsCollection extends OmahaCollection {
 
@@ -152,6 +153,18 @@ export class AttachmentsCollection extends OmahaCollection {
 	public async download(repo: string, version: string, asset: string) {
 		return this.client.get<DownloadAttachmentResponse>(
 			this.format('/v1/repositories/:repo/releases/:version/:asset/download', { repo, version, asset }),
+		);
+	}
+
+	/**
+	 * Deletes an attachment on a draft release.
+	 * @param repo The UUID of the repository.
+	 * @param version The version string.
+	 * @param asset The name of the asset.
+	 */
+	public async delete(repo: string, version: string, asset: string) {
+		return this.client.delete<DeleteObjectResponse>(
+			this.format('/v1/repositories/:repo/releases/:version/:asset', { repo, version, asset }),
 		);
 	}
 
