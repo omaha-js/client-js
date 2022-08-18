@@ -66,6 +66,15 @@ export class RepositoryCollection extends OmahaCollection {
 	}
 
 	/**
+	 * Gets information about a deleted repository (only while within the grace period).
+	 * @scope `account.repos.manage`
+	 * @note The current token must have 'owner' level access to the repository.
+	 */
+	public async getDeleted(id: string) {
+		return this.client.get<Repository>(this.format('/v1/repositories/restore/:id', { id }));
+	}
+
+	/**
 	 * Restores a deleted repository.
 	 * @scope `account.repos.manage`
 	 * @note The current token must have 'owner' level access to the repository.
