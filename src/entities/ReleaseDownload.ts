@@ -1,12 +1,8 @@
 import { Release } from './Release';
 import { ReleaseAttachment } from './ReleaseAttachment';
+import { Token } from './Token';
 
 export interface ReleaseDownload {
-
-	/**
-	 * The unique ID for the download record.
-	 */
-	id: number;
 
 	/**
 	 * The IP address of the downloader.
@@ -27,5 +23,11 @@ export interface ReleaseDownload {
 	 * The attachment that was downloaded.
 	 */
 	attachment: ReleaseAttachment;
+
+	/**
+	 * The token that downloaded this release. This can be `undefined` if the repository is public and it was
+	 * downloaded by an unauthenticated user.
+	 */
+	token?: Token;
 
 }
