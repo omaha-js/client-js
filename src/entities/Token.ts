@@ -43,4 +43,10 @@ export interface Token {
 	 */
 	expires_at: Date | null;
 
+	/**
+	 * The date/time at which this token was deleted. If not deleted, this will be excluded and/or `undefined`. Note
+	 * that deleted tokens only appear in logs.
+	 */
+	deleted_at?: Date;
+
 }
