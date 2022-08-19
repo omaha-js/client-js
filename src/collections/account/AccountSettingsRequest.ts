@@ -15,4 +15,9 @@ export interface AccountSettingsRequest {
 	 */
 	password?: string;
 
+	/**
+	 * The current password for the account – required when changing email or password.
+	 */
+	existingPassword?: string;
+
 }
