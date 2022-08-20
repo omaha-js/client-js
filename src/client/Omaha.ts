@@ -30,6 +30,7 @@ import { OmahaOptions } from './OmahaOptions';
 import { OmahaRealtimeClient } from './OmahaRealtimeClient';
 import { DOMException, fetch } from './util/fetch';
 import FormData from 'form-data';
+import { NotificationsCollection } from '../collections/NotificationsCollection';
 
 export class Omaha extends EventEmitter<OmahaEvents> {
 
@@ -198,6 +199,13 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 */
 	public get attachments() {
 		return this._getCachedCollection(AttachmentsCollection);
+	}
+
+	/**
+	 * A collection of endpoints for working with notifications.
+	 */
+	public get notifications() {
+		return this._getCachedCollection(NotificationsCollection);
 	}
 
 	/**

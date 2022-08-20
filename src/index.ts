@@ -6,6 +6,7 @@ export * from './client/OmahaOptions';
 export * from './client/OmahaRealtimeClient';
 
 export * from './types/scopes';
+export * from './types/notifications';
 
 export * from './entities/enum/CollaborationRole';
 export * from './entities/enum/ReleaseStatus';
@@ -62,6 +63,11 @@ export * from './collections/downloads/WeeklyDownloadCount';
 export * from './collections/invites/CreateInviteRequest';
 export * from './collections/invites/UpdateInviteRequest';
 
+export * from './collections/notifications/GetAccountNotificationsResponse';
+export * from './collections/notifications/GetRepositoryNotificationsResponse';
+export * from './collections/notifications/UpdateNotificationsRequest';
+export * from './collections/notifications/UpdateRepositoryNotificationsRequest';
+
 export * from './collections/realtime/RealtimeRepository';
 
 export * from './collections/releases/CreateReleaseRequest';
@@ -88,6 +94,7 @@ export * from './collections/AuthCollection';
 export * from './collections/CollabsCollection';
 export * from './collections/DownloadsCollection';
 export * from './collections/InvitesCollection';
+export * from './collections/NotificationsCollection';
 export * from './collections/ReleasesCollection';
 export * from './collections/RepositoryCollection';
 export * from './collections/RepositoryTokensCollection';
