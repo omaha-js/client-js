@@ -42,4 +42,10 @@ export interface Collaboration {
 	 */
 	updated_at: Date;
 
+	/**
+	 * The date/time at which this collaboration was deleted. If not deleted, this will be excluded and/or `undefined`.
+	 * Note that deleted collaborations only appear in logs.
+	 */
+	deleted_at?: Date;
+
 }
