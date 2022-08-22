@@ -326,6 +326,11 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 		}
 		catch (error) {
 			if (error instanceof HttpError) {
+				// Treat 502-504 as connection errors so we retry them
+				if (error.code >= 502 && error.code <= 504) {
+					return this._handleClientError<T>(method, path, body, error, attempt);
+				}
+
 				this.emit('error', error);
 				this.emit('server_error', error);
 				throw error;
@@ -335,36 +340,49 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 					throw new AbortError('The operation was aborted.');
 				}
 
-				this.emit('error', error);
-				this.emit('client_error', error, attempt, this._reattemptFailed ? this._reattemptFailedCount : undefined);
-
-				if (this._reattemptFailed && (this._reattemptFailedCount === 0 || attempt < this._reattemptFailedCount)) {
-					const o: any = {};
-
-					const resume = await new Promise<boolean>(resolve => {
-						o.timeout = setTimeout(() => resolve(true), this._reattemptFailedDelay);
-						o.cancel = () => resolve(false);
-
-						this._reattemptTasks.add(o);
-					});
-
-					this._reattemptTasks.delete(o);
-
-					if (!resume) {
-						throw new AbortError(
-							'The request was aborted while attempting to recover from an error:\n' + error.stack
-						);
-					}
-
-					return this._fetchWithRetries(method, path, body, attempt + 1);
-				}
-
-				throw error;
+				return this._handleClientError<T>(method, path, body, error, attempt);
 			}
 			else {
 				throw new Error(`Caught non-error of type ${typeof error} within fetch - this should never happen!`);
 			}
 		}
+	}
+
+	/**
+	 * Handles the given client error and retries the request as cnofigured.
+	 * @param method
+	 * @param path
+	 * @param body
+	 * @param error
+	 * @param attempt
+	 * @returns
+	 */
+	private async _handleClientError<T>(method: string, path: string, body: PostOptions | undefined, error: Error, attempt: number) {
+		this.emit('error', error);
+		this.emit('client_error', error, attempt, this._reattemptFailed ? this._reattemptFailedCount : undefined);
+
+		if (this._reattemptFailed && (this._reattemptFailedCount === 0 || attempt < this._reattemptFailedCount)) {
+			const o: any = {};
+
+			const resume = await new Promise<boolean>(resolve => {
+				o.timeout = setTimeout(() => resolve(true), this._reattemptFailedDelay);
+				o.cancel = () => resolve(false);
+
+				this._reattemptTasks.add(o);
+			});
+
+			this._reattemptTasks.delete(o);
+
+			if (!resume) {
+				throw new AbortError(
+					'The request was aborted while attempting to recover from an error:\n' + error.stack
+				);
+			}
+
+			return this._fetchWithRetries<T>(method, path, body, attempt + 1);
+		}
+
+		throw error;
 	}
 
 	/**
