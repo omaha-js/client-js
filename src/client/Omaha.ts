@@ -31,6 +31,7 @@ import { OmahaRealtimeClient } from './OmahaRealtimeClient';
 import { DOMException, fetch } from './util/fetch';
 import FormData from 'form-data';
 import { NotificationsCollection } from '../collections/NotificationsCollection';
+import { AppConstants } from '../collections/app/AppConstants';
 
 export class Omaha extends EventEmitter<OmahaEvents> {
 
@@ -206,6 +207,13 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 	 */
 	public get notifications() {
 		return this._getCachedCollection(NotificationsCollection);
+	}
+
+	/**
+	 * Gets the remote application's constants.
+	 */
+	public async constants() {
+		return this.get<AppConstants>('/v1/constants');
 	}
 
 	/**

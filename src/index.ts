@@ -36,6 +36,8 @@ export * from './collections/account/tokens/UpdateAccountTokenResponse';
 export * from './collections/account/AcceptInvitationResponse';
 export * from './collections/account/AccountSettingsRequest';
 
+export * from './collections/app/AppConstants';
+
 export * from './collections/assets/CreateAssetRequest';
 export * from './collections/assets/UpdateAssetRequest';
 
