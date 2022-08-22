@@ -5,6 +5,7 @@ import { LoginResponse } from './auth/login/LoginResponse';
 import { RegisterRequest } from './auth/register/RegisterRequest';
 import { RegisterResponse } from './auth/register/RegisterResponse';
 import { ScopesResponse } from './auth/ScopesResponse';
+import { GenericSuccessResponse } from './generic/GenericSuccessResponse';
 
 export class AuthCollection extends OmahaCollection {
 
@@ -62,6 +63,13 @@ export class AuthCollection extends OmahaCollection {
 	 */
 	public async logout() {
 		this.client.setToken(undefined);
+	}
+
+	/**
+	 * Confirms an account's email address using the given action token.
+	 */
+	public async confirm(token: string) {
+		return this.client.post<GenericSuccessResponse>('/v1/auth/confirm', { token });
 	}
 
 }

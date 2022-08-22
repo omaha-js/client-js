@@ -26,6 +26,7 @@ export * from './entities/Tag';
 export * from './entities/Token';
 
 export * from './collections/generic/DeleteObjectResponse';
+export * from './collections/generic/GenericSuccessResponse';
 export * from './collections/generic/Pagination';
 
 export * from './collections/account/tokens/CreateAccountTokenRequest';
