@@ -479,7 +479,7 @@ export class Omaha extends EventEmitter<OmahaEvents> {
 		}
 
 		if (key.endsWith('_at') || key === 'time' || key === 'date' || key.startsWith('date_')) {
-			if (typeof value !== 'string' || !value.endsWith('Z')) {
+			if (typeof value !== 'string' || (!value.endsWith('Z') && !/^\d{4}-\d{2}-\d{2}$/.test(value))) {
 				throw new Error(`Error parsing field "${key}" in response as a date with value: ${value}`);
 			}
 
