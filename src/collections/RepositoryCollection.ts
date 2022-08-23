@@ -2,6 +2,7 @@ import { OmahaCollection } from '../client/OmahaCollection';
 import { Repository } from '../entities/Repository';
 import { DeleteObjectResponse } from './generic/DeleteObjectResponse';
 import { CreateRepositoryRequest } from './repository/CreateRepositoryRequest';
+import { RepositoryOverview } from './repository/RepositoryOverview';
 import { RepositoryWithCollaboration } from './repository/RepositoryWithCollaboration';
 import { UpdateRepositoryRequest } from './repository/UpdateRepositoryRequest';
 import { RepositoryTokensCollection } from './RepositoryTokensCollection';
@@ -20,6 +21,15 @@ export class RepositoryCollection extends OmahaCollection {
 	 */
 	public async list() {
 		return this.client.get<RepositoryWithCollaboration[]>('/v1/repositories');
+	}
+
+	/**
+	 * Gets a list of all repositories that the current token has access to, along with the collaboration, latest
+	 * release, and the last year's worth of weekly download statistics for each.
+	 * @scope None, but an account-based token is required.
+	 */
+	public async overview() {
+		return this.client.get<RepositoryOverview[]>('/v1/repositories/overview');
 	}
 
 	/**

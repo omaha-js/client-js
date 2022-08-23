@@ -84,6 +84,7 @@ export * from './collections/repository/tokens/UpdateRepositoryTokenRequest';
 export * from './collections/repository/tokens/UpdateRepositoryTokenResponse';
 export * from './collections/repository/CreateRepositoryRequest';
 export * from './collections/repository/RepositoryWithCollaboration';
+export * from './collections/repository/RepositoryOverview';
 export * from './collections/repository/UpdateRepositoryRequest';
 
 export * from './collections/tags/CreateTagRequest';
