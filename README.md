@@ -106,6 +106,31 @@ socket.io client. For a list of all available events, check the
 
 You can stop the realtime client at any time with `client.ws.stop()`.
 
+#### release subscriptions
+
+If you're looking to implement updates over the realtime client, subscriptions can be used to monitor for new publishes
+that match a given constraint, and will also receive the current version.
+
+```ts
+const sub = client.ws.subscribe('repo_id', '^1.0.0', release => {
+    if (release && release.tags.includes('latest')) {
+        if (release.version !== installedVersion) {
+            // install it or something...
+            sub.setConstraint('^' + release.version);
+        }
+    }
+});
+```
+
+- The callback function will be invoked immediately with the current matching release.
+- The callback won't be invoked with the same release multiple times (e.g. when reconnecting).
+- The release argument can be `undefined` if there are no matches.
+- The provided releases are guaranteed to be published.
+- The releases are always sent with tags and attachments.
+
+If you're no longer interested in a subscription, use `sub.close()`. Note that subscriptions persist between
+connections including when the realtime client is started and stopped manually.
+
 ### errors
 
 #### server-side errors

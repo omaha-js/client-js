@@ -4,6 +4,7 @@ export * from './client/Omaha';
 export * from './client/OmahaCollection';
 export * from './client/OmahaOptions';
 export * from './client/OmahaRealtimeClient';
+export * from './client/realtime/Subscription';
 
 export * from './types/scopes';
 export * from './types/notifications';
